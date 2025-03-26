@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-event-set-component@^5.0.0/dist/aframe-event-set-component.min.js"></script>
+</head>
+<body>
+    <a-scene cursor="rayOrigin: mouse">
+        <a-sky src="https://cdn.glitch.com/7e18fbf8-9686-4cf7-91f9-4a6bbdb54f5e%2Fsky.jpg?1544174075054"></a-sky>
+        <a-text id="choixNuit" value="Partir de nuit" position="0 2 -2" width="0.001" color="white" visible="false"></a-text>
+        <a-text id="choixJour" value="Partir de jour" position="0 1.5 -2" width="0.001" color="white" visible="false"></a-text>
+        <a-image id="phareNuit" src="https://i.postimg.cc/8PbgvpV6/pharenuit.png" position="0 1.5 -3" width="8" height="4" visible="false"></a-image>
+        <a-image id="phareJour" src="https://i.postimg.cc/sDT0yvrw/phare.png" position="0 1.5 -3" width="8" height="4" visible="false"></a-image>
+        <a-plane id="nuage" src="https://i.postimg.cc/KvhVqjL4/nuage.webp" position="3 2.5 -3" rotation="0 -30 0" width="2" height="1.4" material="opacity: 0.9" animation="property: position; to: 0 2.5 -3; dur: 5000; loop: true; dir: alternate; easing: linear;"></a-plane>
+        <a-plane id="barque" src="https://i.postimg.cc/P58FmFtG/barque.png" position="-7 0.5 -3" rotation="0 30 0" width="2" height="1" material="opacity: 0.7"></a-plane>
+        <a-text id="textLabelBarque" value=" " position="-7 0 -3" rotation="0 30 0" width="3"></a-text>
+        <a-plane id="button" position="0.7 1.3 -2" width="3" height="0.5" color="blue" material="opacity: 0"></a-plane>
+        <a-text id="textLabel" value="Hum, ce phare... comment l'atteindre ?" position="-0.3 1.4 -1.99" width="3"></a-text>
+        <a-text id="textLabel" value=".          (cliquez ici)" position="-0.2 1.15 -1.99" width="2" color="blue"></a-text>
+        <a-plane id="rames" src="https://i.postimg.cc/KYhwVYC0/rames.png" position="0 1.7 2" rotation="0 180 0" width="2" height="1" material="opacity: 0.9"></a-plane>
+        <a-image id="lune" src="https://i.postimg.cc/63qKhDth/lune.png" position="0 3 -5" color="lightgray" rotation="0 0 0" radius="0.4" visible="false"></a-image>
+        <a-entity cursor="rayOrigin: mouse"></a-entity>
+    </a-scene>
+    <script>
+        let ramesPresentes = true; // Variable pour suivre l'état des rames
+        document.querySelector("#button").addEventListener("click", function () {
+            document.querySelector("#textLabel").setAttribute("value", "Il me faut des rames");
+        });
+        document.querySelector("#barque").addEventListener("click", function () {
+            if (ramesPresentes) {
+                document.querySelector("#textLabelBarque").setAttribute("value", "Une barque solide.");
+            } else {
+                document.querySelector("#textLabelBarque").setAttribute("value", "Le vent s'est calmé.");
+                document.querySelector("#choixNuit").setAttribute('visible', 'true');
+                document.querySelector("#choixJour").setAttribute('visible', 'true');
+                document.querySelector("#choixNuit").setAttribute("width", "3");
+                document.querySelector("#choixJour").setAttribute("width", "3");
+            }
+        });
+        document.querySelector("#rames").addEventListener("click", function () {
+            if (ramesPresentes) {
+                document.querySelector("#rames").setAttribute("visible", "false");
+                document.querySelector("#barque").setAttribute("src", "https://i.postimg.cc/HLd2ymdV/barque-rames.png");
+                document.querySelector("#nuage").setAttribute('visible', 'false');
+                document.querySelector("#lune").setAttribute('visible', 'true');
+                document.querySelector("#textLabel").setAttribute('visible', 'false');
+                ramesPresentes = false;
+            }
+        });
+        document.querySelector("#choixNuit").addEventListener("click", function () {
+            document.querySelector("#choixNuit").setAttribute('visible', 'false');
+            document.querySelector("#choixJour").setAttribute('visible', 'false');
+            document.querySelector("#phareNuit").setAttribute('visible', 'true');
+        });
+        document.querySelector("#choixJour").addEventListener("click", function () {
+            document.querySelector("#choixNuit").setAttribute('visible', 'false');
+            document.querySelector("#choixJour").setAttribute('visible', 'false');
+            document.querySelector("#phareJour").setAttribute('visible', 'true');
+        });
+    </script>
+</body>
+</html>
