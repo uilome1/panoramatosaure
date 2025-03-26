@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panorama Interactif</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #infoBox {
+            position: absolute;
+            top: 20px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white; padding: 10px;
+            border-radius: 5px; text-align: center;
+        }
+        #infoBox a {
+            display: block;
+  color: rgb(0, 255, 00); /* Change la couleur du texte en rouge */
+  text-decoration: none; /* Supprime le soulignement */
+  font-weight: bold; /* Met le texte en gras */
+  padding: 5px 10px; /* Ajoute un espacement autour du texte */
+  border: 1px solid rgb(200, 255, 200); /* Ajoute une bordure rouge */
+  border-radius: 5px; /* Arrondit les bords */
+  margin: 10px; /* Ajoute une marge entre les liens */
+}
+
+#infoBox a:hover {
+  background-color: lightgray; /* Change la couleur de fond au survol */
+}
+        #imageContainer {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            display: none; /* Caché par défaut */
+        }
+        #popupImage {
+            width: 200px; height: auto;
+            border: 2px solid white; border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="infoBox">Cliquez sur un point pour afficher des infos</div>
+    <div id="imageContainer">
+        <img id="popupImage" src="" alt="Image du point">
+    </div>
+    
+    <script>
+        let scene, camera, renderer, panorama, raycaster, mouse;
+
+        init();
+        animate();
+
+        function init() {
+            // SCÈNE, CAMÉRA, RENDERER
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 0.1);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // PANORAMA (Effet miroir pour remettre l'image à l'endroit)
+            const texture = new THREE.TextureLoader().load("https://i.postimg.cc/8k4Y2ctC/Panorama-Vinaigrier-carrefour1.jpg");
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.repeat.x = -1;
+
+            let geometry = new THREE.CylinderGeometry(400, 300, 400, 60, 1, true);
+            let material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
+            panorama = new THREE.Mesh(geometry, material);
+            scene.add(panorama);
+
+            // INTERACTIVITÉ
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // AJOUTER DES POINTS
+            addPoint(215, 30, -80, "Choix multiple", {
+    type: "links",
+    links: [
+        { text: "Retourner à Nice", url: "glitch6.html" },
+        { text: "Monter au Vinaigrier", url: "panorama_entre_vinaigrier_intercatif_avecphotos.html" }
+    ]
+});
+            // ÉVÉNEMENTS SOURIS
+            window.addEventListener("mousedown", onMouseDown);
+            window.addEventListener("mousemove", onMouseMove);
+            window.addEventListener("resize", onWindowResize);
+        }
+
+        // FONCTION POUR AJOUTER UN POINT CLIQUABLE
+        function addPoint(x, y, z, label, imageUrl) {
+            let geometry = new THREE.SphereGeometry(5, 32, 32);
+            let material = new THREE.MeshBasicMaterial({ color: 0xecff4a });
+            let point = new THREE.Mesh(geometry, material);
+            point.position.set(x, y, z);
+            panorama.add(point);  // 🟢 Ajoute le point au panorama, pas à la scène !
+            
+            point.userData = { label, imageUrl };
+
+            console.log(`Point ajouté : ${label} à x:${x}, y:${y}, z:${z}`);
+        }
+
+        // GESTION DU CLIC SUR UN POINT
+        function onMouseDown(event) {
+            event.preventDefault();
+            
+            // Conversion des coordonnées souris en coordonnées Three.js
+            let mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            // Lancer un rayon depuis la caméra pour détecter un point cliqué
+            let raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Vérifier les intersections uniquement avec les enfants du panorama
+            let intersects = raycaster.intersectObjects(panorama.children);
+            
+            if (intersects.length > 0) {
+                let point = intersects[0].object;
+
+                if (point.userData.imageUrl) {
+                    showInfo(point.userData.imageUrl);
+                } else {
+                    showInfo(point.userData.label);
+                }
+            }
+        }
+
+        // Fonction pour afficher l’image ou le texte temporairement
+        function showInfo(info) {
+    let infoBox = document.getElementById("infoBox");
+
+    if (typeof info === 'string') {
+        infoBox.innerHTML = info;
+    } else if (info && info.type === "links") {
+        let linksHTML = info.links.map(link => `<a href="${link.url}">${link.text}</a>`).join("<br>");
+        infoBox.innerHTML = linksHTML;
+    } else if (typeof info === 'string' && info.startsWith("http")) {
+        infoBox.innerHTML = `<img src="${info}" style="max-width: 200px;">`;
+    }
+
+    infoBox.style.display = "block";
+
+    setTimeout(() => {
+        infoBox.style.display = "none";
+    }, 5000);
+}
+
+        // PERMETTRE LA ROTATION DU PANORAMA AU CLIC
+        let isDragging = false, previousMouseX = 0;
+
+        function onMouseMove(event) {
+            if (isDragging) {
+                let deltaX = event.clientX - previousMouseX;
+                panorama.rotation.y += deltaX * 0.002;
+                previousMouseX = event.clientX;
+            }
+        }
+
+        window.addEventListener("mousedown", (event) => { isDragging = true; previousMouseX = event.clientX; });
+        window.addEventListener("mouseup", () => { isDragging = false; });
+
+        // GÉRER LE REDIMENSIONNEMENT DE LA FENÊTRE
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // BOUCLE D'ANIMATION
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        console.log(scene.children);
+    </script>
+</body>
+</html>
